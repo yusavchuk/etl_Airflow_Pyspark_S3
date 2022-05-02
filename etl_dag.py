@@ -4,7 +4,10 @@
 import os
 from airflow.models import DAG
 from airflow.operators.bash import BashOperator
+from airflow.operators.python import PythonOperator
 from datetime import datetime
+from Spark_process import Spark_process
+
 
 with DAG(
     dag_id='etl_dag',
@@ -33,5 +36,29 @@ with DAG(
         task_id='unzip_title',
         bash_command='gunzip /home/yu_savchuk/airflow/dags/title.basics.tsv.gz')
     
-    task_download_title >> task_unzip_title 
-    task_download_rating >> task_unzip_rating
+    task_transform_files=PythonOperator(
+        task_id='transform_files',
+        python_callable=Spark_process.transform, 
+        op_args=['/home/yu_savchuk/airflow/dags/title.basics.tsv',
+                 '/home/yu_savchuk/airflow/dags/title.ratings.tsv'])
+        
+    task_delete_title=BashOperator(
+        task_id='delete_title',
+        bash_command='rm /home/yu_savchuk/airflow/dags/title.basics.tsv')
+    
+    task_delete_rating=BashOperator(
+        task_id='delete_rating',
+        bash_command='rm /home/yu_savchuk/airflow/dags/title.ratings.tsv')
+    
+    
+    task_download_title >> task_download_rating >> \
+        [task_unzip_rating, task_unzip_title] >> task_transform_files >> \
+            [task_delete_title, task_delete_rating]
+    
+
+    
+    
+    
+    
+    
+    

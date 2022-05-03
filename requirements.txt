@@ -1,0 +1,4 @@
+airflow==0.6
+apache_airflow_providers_ftp==2.1.2
+pandas==1.4.2
+pyspark==3.2.1
